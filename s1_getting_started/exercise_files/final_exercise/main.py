@@ -6,6 +6,8 @@ import torch
 from data import mnist
 from model import MyAwesomeModel
 
+from torch import nn, optim
+
 
 class TrainOREvaluate(object):
     """ Helper class that will help launch class methods as commands
@@ -36,7 +38,28 @@ class TrainOREvaluate(object):
         
         # TODO: Implement training loop here
         model = MyAwesomeModel()
-        train_set, _ = mnist()
+        trainloader, _ = mnist()
+        
+        criterion = nn.NLLLoss()
+        optimizer = optim.Adam(model.parameters(), lr=0.003)
+        
+        epochs = 4
+        for e in range(epochs):
+            running_loss = 0
+            for images, labels in trainloader:
+                
+                # set model to train mode
+                model = model.train()
+                
+                optimizer.zero_grad()
+                
+                log_ps = model(images)
+                loss = criterion(log_ps, labels)
+                loss.backward()
+                optimizer.step()
+                
+                running_loss += loss.item()
+        
         
     def evaluate(self):
         print("Evaluating until hitting the ceiling")
@@ -48,7 +71,17 @@ class TrainOREvaluate(object):
         
         # TODO: Implement evaluation logic here
         model = torch.load(args.load_model_from)
-        _, test_set = mnist()
+        _, testloader = mnist()
+        
+        with torch.no_grad():
+            # set model to evaluation mode
+            model = model.eval()
+            for images, labels in testloader:
+                probas = torch.exp(model(images))
+                _, top_class = probas.topk(1, dim=1)
+                equals = top_class == labels.view(*top_class.shape)
+                accuracy = torch.mean(equals.type(torch.FloatTensor))
+        print(f'Accuracy: {accuracy.item()*100}%')
 
 if __name__ == '__main__':
     TrainOREvaluate()
