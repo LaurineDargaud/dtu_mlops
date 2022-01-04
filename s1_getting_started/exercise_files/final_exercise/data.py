@@ -6,7 +6,7 @@ from torch.utils.data import TensorDataset, DataLoader
 def mnist():
     # exchange with the corrupted mnist dataset
     
-    path = 'C:/Users/Laurine/Documents/DTU Python/Machine Learning Operations/dtu_mlops/data/corruptmnist/'
+    path = '/mnt/c/Users/Laurine/Documents/DTU Python/Machine Learning Operations/dtu_mlops/data/corruptmnist/'
     
     ### get TRAIN dataloader
     all_torch_images, all_torch_labels = [], []
@@ -17,6 +17,7 @@ def mnist():
         all_torch_labels.append(torch.from_numpy(np_array['labels']))
     torch_images= torch.cat(all_torch_images, 0)
     torch_labels = torch.cat(all_torch_labels, 0)
+    torch_images, torch_labels = torch_images.type(torch.FloatTensor), torch_labels.type(torch.LongTensor)
     train_dataset = TensorDataset(torch_images, torch_labels)
     train_loader = DataLoader(train_dataset)
     
@@ -25,6 +26,7 @@ def mnist():
     np_array = np.load(file_path)
     torch_test_images = torch.from_numpy(np_array['images'])
     torch_test_labels = torch.from_numpy(np_array['labels'])
+    torch_test_images, torch_test_labels = torch_test_images.type(torch.FloatTensor), torch_test_labels.type(torch.LongTensor)
     test_dataset= TensorDataset(torch_test_images, torch_test_labels)
     test_loader = DataLoader(test_dataset)
     
