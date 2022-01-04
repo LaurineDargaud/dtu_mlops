@@ -37,7 +37,8 @@ class TrainOREvaluate(object):
         # add any additional argument that you want
         parser.add_argument('--nb_epochs', default=30, type=int)
         parser.add_argument('--save_file', default='best_model')
-        parser.add_argument('--criterion', default='CrossEntropyLoss')
+        parser.add_argument('--criterion', default='NLLLoss')
+        parser.add_argument('--optimizer', default='SGD')
         args = parser.parse_args(sys.argv[2:])
         print(args)
         
@@ -47,7 +48,7 @@ class TrainOREvaluate(object):
         
         #criterion = nn.CrossEntropyLoss()
         criterion = eval(f'nn.{args.criterion}()')
-        optimizer = optim.Adam(model.parameters(), lr=args.lr)
+        optimizer = eval(f'optim.{args.optimizer}(model.parameters(), lr = {args.lr})')
         
         epochs = args.nb_epochs
         steps = 0
@@ -57,7 +58,6 @@ class TrainOREvaluate(object):
 
         for e in range(epochs):
             running_loss = 0
-            print(f'Epoch {e+1}/{epochs}...')
             for images, labels in trainloader:
                 
                 # set model to train mode
@@ -74,7 +74,7 @@ class TrainOREvaluate(object):
 
             loss_tracking[steps] = running_loss
             steps += 1
-            print(f'   Loss: {running_loss}')
+            print(f'Epoch {e+1}/{epochs}...   Loss: {running_loss}')
 
             # save best model
             if best_loss == None or running_loss < best_loss:
@@ -85,7 +85,7 @@ class TrainOREvaluate(object):
             plt.plot(list(loss_tracking.keys()), list(loss_tracking.values()))
             plt.xlabel('Steps')
             plt.ylabel('Training Loss')
-            plt.title(f'Training Loss evolution using {args.criterion} criterion')
+            plt.title(f'Training Loss evolution using {args.criterion} criterion, {args.optimizer} optimizer and {args.nb_epochs} epochs', size=10)
             plt.savefig('training_loss_plot.png')
     
         
@@ -104,15 +104,14 @@ class TrainOREvaluate(object):
         with torch.no_grad():
             # set model to evaluation mode
             model = model.eval()
-            accuracy = 0
-            nb_samples = 0
+            all_equals = []
             for images, labels in testloader:
                 probas = torch.exp(model(images))
                 _, top_class = probas.topk(1, dim=1)
                 equals = top_class == labels.view(*top_class.shape)
-                accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
-                nb_samples += 1
-            accuracy /= nb_samples
+                all_equals.append(equals)
+            equals = torch.cat(all_equals, 0)
+            accuracy = torch.mean(equals.type(torch.FloatTensor)).item()
             print(f'Accuracy: {round(accuracy*100,2)}%')
 
 if __name__ == '__main__':

@@ -4,9 +4,9 @@ import torch.nn.functional as F
 class MyAwesomeModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(784, 256)
+        self.fc1 = nn.Linear(784, 128)
         #self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(256, 64)
+        self.fc3 = nn.Linear(128, 64)
         self.fc4 = nn.Linear(64, 10)
         
         # Dropout module with 0.2 drop probability
