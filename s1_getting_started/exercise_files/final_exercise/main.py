@@ -3,6 +3,8 @@ import sys
 
 import torch
 
+import matplotlib.pyplot as plt
+
 from data import mnist
 from model import MyAwesomeModel
 
@@ -33,8 +35,9 @@ class TrainOREvaluate(object):
         parser = argparse.ArgumentParser(description='Training arguments')
         parser.add_argument('--lr', default=0.1, type=float)
         # add any additional argument that you want
-        parser.add_argument('--nb_epochs', default=4, type=int)
-        parser.add_argument('--save_file', default='best_model_corruptedMNIST')
+        parser.add_argument('--nb_epochs', default=30, type=int)
+        parser.add_argument('--save_file', default='best_model')
+        parser.add_argument('--criterion', default='CrossEntropyLoss')
         args = parser.parse_args(sys.argv[2:])
         print(args)
         
@@ -42,7 +45,8 @@ class TrainOREvaluate(object):
         model = MyAwesomeModel()
         trainloader, _ = mnist()
         
-        criterion = nn.NLLLoss()
+        #criterion = nn.CrossEntropyLoss()
+        criterion = eval(f'nn.{args.criterion}()')
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
         
         epochs = args.nb_epochs
@@ -76,12 +80,19 @@ class TrainOREvaluate(object):
             if best_loss == None or running_loss < best_loss:
                 best_loss = running_loss
                 torch.save(model, f'{args.save_file}.pth')
+            
+            # save figure with training loss VS steps
+            plt.plot(list(loss_tracking.keys()), list(loss_tracking.values()))
+            plt.xlabel('Steps')
+            plt.ylabel('Training Loss')
+            plt.title(f'Training Loss evolution using {args.criterion} criterion')
+            plt.savefig('training_loss_plot.png')
     
         
     def evaluate(self):
         print("Evaluating until hitting the ceiling")
         parser = argparse.ArgumentParser(description='Training arguments')
-        parser.add_argument('load_model_from', default='')
+        parser.add_argument('load_model_from', default='best_model.pth')
         # add any additional argument that you want
         args = parser.parse_args(sys.argv[2:])
         print(args)
@@ -93,24 +104,16 @@ class TrainOREvaluate(object):
         with torch.no_grad():
             # set model to evaluation mode
             model = model.eval()
-            accuracy, nb_images = 0, 0
+            accuracy = 0
+            nb_samples = 0
             for images, labels in testloader:
                 probas = torch.exp(model(images))
                 _, top_class = probas.topk(1, dim=1)
                 equals = top_class == labels.view(*top_class.shape)
                 accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
-                nb_images += 1
-            accuracy /= nb_images
+                nb_samples += 1
+            accuracy /= nb_samples
             print(f'Accuracy: {round(accuracy*100,2)}%')
 
 if __name__ == '__main__':
-    TrainOREvaluate()
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    TrainOREvaluate()   
