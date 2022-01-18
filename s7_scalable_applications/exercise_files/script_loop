@@ -1,0 +1,7 @@
+#!/bin/bash
+declare -a arr=(4 6 8)
+for i in "${arr[@]}"
+do
+	echo "num_workers = $i"
+	python3 lfw_dataset.py -get_timing -num_workers $i
+done
